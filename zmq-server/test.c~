@@ -1,0 +1,47 @@
+//  Hello World server
+
+#include <zmq.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <assert.h>
+
+
+int write_file(){
+   char c = '\0';  
+    int in = -1, out = -1;  
+      
+    //以只读方式打开数据文件  
+    in = open("Data.txt", O_RDONLY);  
+    //以只写方式创建文件，如果文件不存在就创建一个新的文件  
+    //文件属主具有读和写的权限  
+    out = open("copy_system.out.txt", O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);  
+    while(read(in, &c, 1) == 1)//读一个字节的数据  
+        write(out, &c, 1);//写一个字节的数据  
+  
+    //关闭文件描述符  
+    close(in);  
+    close(out);  
+    return 0; 
+}
+
+int main (void)
+{
+    //  Socket to talk to clients
+    void *context = zmq_ctx_new ();
+    void *responder = zmq_socket (context, ZMQ_REP);
+    int rc = zmq_bind (responder, "tcp://*:9999");
+    assert (rc == 0);
+
+    while (1) {
+        char buffer [10];
+        zmq_recv (responder, buffer, 10, 0);
+        printf ("Received Hello:%s\n",buffer);
+        sleep (1);          //  Do some 'work'
+
+
+
+        zmq_send (responder, "World", 5, 0);
+    }
+    return 0;
+}
